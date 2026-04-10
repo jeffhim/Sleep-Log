@@ -20,9 +20,7 @@
     var c = document.createElement('canvas');
     c.width = size; c.height = size;
     var ctx = c.getContext('2d');
-    var s = size / 192; /* scale factor based on 192px base */
-
-    /* Background gradient */
+    var s = size / 192;
     var bg = ctx.createLinearGradient(0, 0, size, size);
     bg.addColorStop(0, '#2a2060');
     bg.addColorStop(0.5, '#3a2878');
@@ -31,15 +29,11 @@
     ctx.beginPath();
     ctx.roundRect(0, 0, size, size, size * 0.22);
     ctx.fill();
-
-    /* Subtle inner glow */
     var glow = ctx.createRadialGradient(size * 0.35, size * 0.35, 0, size * 0.5, size * 0.5, size * 0.7);
     glow.addColorStop(0, 'rgba(201,160,220,0.15)');
     glow.addColorStop(1, 'rgba(201,160,220,0)');
     ctx.fillStyle = glow;
     ctx.fill();
-
-    /* Crescent moon */
     var mx = size * 0.46, my = size * 0.42, mr = size * 0.28;
     ctx.beginPath();
     ctx.arc(mx, my, mr, 0, Math.PI * 2);
@@ -48,15 +42,11 @@
     moonGrad.addColorStop(1, '#f5c28a');
     ctx.fillStyle = moonGrad;
     ctx.fill();
-
-    /* Cut out crescent shape */
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
     ctx.arc(mx + mr * 0.55, my - mr * 0.25, mr * 0.75, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalCompositeOperation = 'source-over';
-
-    /* Stars */
     function drawStar(cx, cy, r, color, alpha) {
       ctx.save();
       ctx.globalAlpha = alpha;
@@ -77,8 +67,6 @@
     drawStar(size * 0.82, size * 0.42, 8 * s, '#f5c28a', 0.7);
     drawStar(size * 0.25, size * 0.18, 6 * s, '#c9a0dc', 0.5);
     drawStar(size * 0.15, size * 0.55, 5 * s, '#f2a7c3', 0.4);
-
-    /* Small dots (distant stars) */
     var dots = [[0.62, 0.15], [0.88, 0.58], [0.18, 0.35], [0.75, 0.65], [0.3, 0.7]];
     dots.forEach(function(d) {
       ctx.beginPath();
@@ -86,8 +74,6 @@
       ctx.fillStyle = 'rgba(240,234,248,0.35)';
       ctx.fill();
     });
-
-    /* Cloud at bottom */
     ctx.globalAlpha = 0.55;
     ctx.fillStyle = '#e0d0f0';
     var cloudY = size * 0.78;
@@ -98,8 +84,6 @@
     ctx.arc(size * 0.50, cloudY + 4 * s, 22 * s, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
-
-    /* "zZ" text */
     ctx.save();
     ctx.font = 'bold ' + (18 * s) + 'px sans-serif';
     ctx.fillStyle = 'rgba(201,160,220,0.6)';
@@ -108,29 +92,20 @@
     ctx.fillStyle = 'rgba(201,160,220,0.45)';
     ctx.fillText('z', size * 0.68, size * 0.52);
     ctx.restore();
-
     return c;
   }
-
-  /* Generate icons at different sizes */
   var icon192 = drawIcon(192);
   var icon512 = drawIcon(512);
   var icon180 = drawIcon(180);
-
-  /* Apple touch icon */
   var appleLink = document.createElement('link');
   appleLink.rel = 'apple-touch-icon';
   appleLink.href = icon180.toDataURL('image/png');
   document.head.appendChild(appleLink);
-
-  /* Favicon */
   var favicon = document.createElement('link');
   favicon.rel = 'icon';
   favicon.type = 'image/png';
   favicon.href = icon192.toDataURL('image/png');
   document.head.appendChild(favicon);
-
-  /* Web manifest for Android */
   var manifest = {
     name: 'Wing Nam Sleep Log',
     short_name: 'Sleep Log',
@@ -205,9 +180,7 @@ h1, h2, h3 { font-family: 'NaikaiFont', 'Playfair Display', serif; font-weight: 
   display: flex; align-items: center; gap: 10px;
   position: sticky; top: 0; z-index: 50; flex-shrink: 0;
 }
-.header-icon {
-  font-size: 22px; display: flex; align-items: center; gap: 4px;
-}
+.header-icon { font-size: 22px; display: flex; align-items: center; gap: 4px; }
 .header-icon .star { color: var(--warm); font-size: 12px; animation: twinkle 2s ease-in-out infinite; }
 .header-icon .moon-icon { color: var(--pink); }
 @keyframes twinkle { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -304,9 +277,7 @@ h1, h2, h3 { font-family: 'NaikaiFont', 'Playfair Display', serif; font-weight: 
 .chip i { margin-right: 3px; }
 
 /* Other reason input */
-#otherReasonWrap {
-  margin-top: 10px; display: none; animation: fadeUp 0.25s ease;
-}
+#otherReasonWrap { margin-top: 10px; display: none; animation: fadeUp 0.25s ease; }
 #otherReasonWrap.visible { display: block; }
 #otherReasonWrap input {
   width: 100%; padding: 10px 14px; background: var(--bg); border: 1.5px solid var(--pink);
@@ -318,6 +289,19 @@ h1, h2, h3 { font-family: 'NaikaiFont', 'Playfair Display', serif; font-weight: 
   display: block; font-size: 11px; font-weight: 700; color: var(--pink);
   margin-bottom: 5px; letter-spacing: 0.5px;
 }
+
+/* Toggle buttons (Yes/No) */
+.toggle-group { display: flex; gap: 10px; }
+.toggle-btn {
+  flex: 1; padding: 11px 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700;
+  border: 1.5px solid var(--border); background: var(--bg); color: var(--text2);
+  cursor: pointer; transition: all 0.25s; user-select: none;
+  font-family: 'NaikaiFont', 'Quicksand', sans-serif; text-align: center;
+}
+.toggle-btn:active { transform: scale(0.97); }
+.toggle-btn i { margin-right: 4px; }
+.toggle-btn.selected-no { background: var(--accent-soft); border-color: var(--teal); color: var(--teal); }
+.toggle-btn.selected-yes { background: var(--pink-soft); border-color: var(--warm); color: var(--warm); }
 
 /* Buttons */
 .btn {
@@ -356,6 +340,26 @@ h1, h2, h3 { font-family: 'NaikaiFont', 'Playfair Display', serif; font-weight: 
   background: var(--pink-soft); color: var(--pink); font-weight: 700;
 }
 
+/* Filter bar */
+.filter-bar {
+  display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto;
+  -webkit-overflow-scrolling: touch; padding-bottom: 2px;
+}
+.filter-btn {
+  padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  border: 1.5px solid var(--border); background: var(--bg); color: var(--text2);
+  cursor: pointer; transition: all 0.25s; white-space: nowrap; flex-shrink: 0;
+  font-family: 'NaikaiFont', 'Quicksand', sans-serif;
+}
+.filter-btn:active { transform: scale(0.96); }
+.filter-btn.active { background: var(--pink-soft); border-color: var(--pink); color: var(--pink); }
+.custom-range {
+  display: none; gap: 10px; align-items: center; margin-bottom: 16px;
+}
+.custom-range.visible { display: flex; }
+.custom-range input { flex: 1; padding: 10px 12px; font-size: 14px; }
+.custom-range span { color: var(--text3); font-size: 13px; font-weight: 600; }
+
 /* Metric Cards */
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
 .metric-card {
@@ -381,7 +385,6 @@ h1, h2, h3 { font-family: 'NaikaiFont', 'Playfair Display', serif; font-weight: 
 .observation.good { border-left-color: var(--teal); }
 .observation.warn { border-left-color: var(--warm); }
 .observation.bad { border-left-color: var(--rose); }
-
 
 /* Toast */
 .toast {
@@ -515,6 +518,13 @@ html.light .deco-stars span { opacity: 0.12; color: var(--accent); }
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label"><i class="fa-solid fa-wine-glass" style="margin-right:4px;"></i> Alcohol Today?</label>
+        <div class="toggle-group" id="alcoholToggle">
+          <button type="button" class="toggle-btn selected-no" data-val="no"><i class="fa-solid fa-xmark"></i> No</button>
+          <button type="button" class="toggle-btn" data-val="yes"><i class="fa-solid fa-wine-glass"></i> Yes</button>
+        </div>
+      </div>
+      <div class="form-group">
         <label class="form-label">Notes</label>
         <textarea class="form-input" id="fNotes" rows="2" placeholder="Anything notable..."></textarea>
       </div>
@@ -532,6 +542,18 @@ html.light .deco-stars span { opacity: 0.12; color: var(--accent); }
 
 <!-- INSIGHTS PANEL -->
 <div class="panel" id="panelInsights">
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-btn active" data-range="all">All</button>
+    <button class="filter-btn" data-range="month">This Month</button>
+    <button class="filter-btn" data-range="week">This Week</button>
+    <button class="filter-btn" data-range="custom">Custom</button>
+  </div>
+  <div class="custom-range" id="customRange">
+    <input type="date" class="form-input" id="filterFrom">
+    <span>to</span>
+    <input type="date" class="form-input" id="filterTo">
+  </div>
+  <div id="filteredCount" style="font-size:11px;color:var(--text3);margin-bottom:12px;text-align:center;font-weight:600;"></div>
   <div class="metrics-grid" id="metricsGrid"></div>
   <div class="card">
     <div class="card-title"><i class="fa-solid fa-chart-line"></i> Sleep Duration</div>
@@ -551,7 +573,6 @@ html.light .deco-stars span { opacity: 0.12; color: var(--accent); }
   </div>
 </div>
 
-
 </div><!-- end content-area -->
 
 <!-- BOTTOM NAV -->
@@ -559,7 +580,6 @@ html.light .deco-stars span { opacity: 0.12; color: var(--accent); }
   <button class="active" data-tab="panelLog"><i class="fa-solid fa-cloud-moon"></i>Log</button>
   <button data-tab="panelHistory"><i class="fa-solid fa-list"></i>History</button>
   <button data-tab="panelInsights"><i class="fa-solid fa-chart-column"></i>Insights</button>
-
 </nav>
 
 <!-- MODAL CONTAINER -->
@@ -572,6 +592,9 @@ var sheetUrl = 'https://script.google.com/macros/s/AKfycbwk20F4cceVLVg1ad8CHxW2N
 var editId = null;
 var syncInterval = null;
 var charts = {};
+var insightFilter = 'all';
+var customStart = '';
+var customEnd = '';
 
 /* ============ INIT ============ */
 (function init() {
@@ -579,8 +602,9 @@ var charts = {};
   generateStars();
   setupNav();
   setupForm();
+  setupFilters();
   setDefaultDate();
-  setSyncStatus('connected', 'Connected');
+  setSyncStatus('syncing', 'Connecting...');
   fetchEntries();
   startAutoSync();
 })();
@@ -591,7 +615,7 @@ function detectTheme() {
   }
   window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
     document.documentElement.classList.toggle('light', e.matches);
-    if (Object.keys(charts).length) renderCharts();
+    if (Object.keys(charts).length) renderInsights();
   });
 }
 
@@ -627,15 +651,60 @@ function setupNav() {
   });
 }
 
+/* ============ FILTERS ============ */
+function setupFilters() {
+  document.querySelectorAll('#filterBar .filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#filterBar .filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      insightFilter = btn.dataset.range;
+      var customWrap = document.getElementById('customRange');
+      if (insightFilter === 'custom') {
+        customWrap.classList.add('visible');
+      } else {
+        customWrap.classList.remove('visible');
+      }
+      renderInsights();
+    });
+  });
+  document.getElementById('filterFrom').addEventListener('change', function() {
+    customStart = this.value;
+    if (insightFilter === 'custom') renderInsights();
+  });
+  document.getElementById('filterTo').addEventListener('change', function() {
+    customEnd = this.value;
+    if (insightFilter === 'custom') renderInsights();
+  });
+}
+
+function getFilteredEntries() {
+  if (insightFilter === 'all') return entries.slice();
+  var now = new Date();
+  var startDate, endDate;
+  if (insightFilter === 'month') {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    endDate = now.toISOString().split('T')[0];
+  } else if (insightFilter === 'week') {
+    var day = now.getDay();
+    var diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    startDate = new Date(now.getFullYear(), now.getMonth(), diff).toISOString().split('T')[0];
+    endDate = now.toISOString().split('T')[0];
+  } else if (insightFilter === 'custom') {
+    startDate = customStart || '2000-01-01';
+    endDate = customEnd || '2099-12-31';
+  }
+  return entries.filter(function(e) {
+    return e.date >= startDate && e.date <= endDate;
+  });
+}
+
 /* ============ FORM ============ */
 function setupForm() {
   document.getElementById('fAwakeCount').addEventListener('input', renderAwakeningInputs);
 
-  // Chip click handlers
   document.querySelectorAll('#causeChips .chip').forEach(function(chip) {
     chip.addEventListener('click', function() {
       chip.classList.toggle('selected');
-      // Toggle "Other" reason input visibility
       if (chip.id === 'chipOther') {
         var wrap = document.getElementById('otherReasonWrap');
         if (chip.classList.contains('selected')) {
@@ -646,6 +715,16 @@ function setupForm() {
           document.getElementById('fOtherReason').value = '';
         }
       }
+    });
+  });
+
+  /* Alcohol toggle */
+  document.querySelectorAll('#alcoholToggle .toggle-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#alcoholToggle .toggle-btn').forEach(function(b) {
+        b.classList.remove('selected-yes', 'selected-no');
+      });
+      btn.classList.add(btn.dataset.val === 'yes' ? 'selected-yes' : 'selected-no');
     });
   });
 
@@ -684,6 +763,7 @@ function getFormData() {
   document.querySelectorAll('#awakeningTimesWrap input').forEach(function(inp) {
     if (inp.value) awakeTimes.push(inp.value);
   });
+  var alcoholBtn = document.querySelector('#alcoholToggle .toggle-btn.selected-yes');
   return {
     id: editId || generateId(),
     date: document.getElementById('fDate').value,
@@ -694,7 +774,8 @@ function getFormData() {
     awakeningTimes: awakeTimes.join(','),
     wakeUpTime: document.getElementById('fWakeUp').value,
     causes: causes.join(','),
-    notes: document.getElementById('fNotes').value
+    notes: document.getElementById('fNotes').value,
+    alcohol: alcoholBtn ? 'yes' : 'no'
   };
 }
 
@@ -708,7 +789,7 @@ function populateForm(entry) {
   document.getElementById('fAwakeCount').value = entry.awakeCount || 0;
   document.getElementById('fNotes').value = entry.notes || '';
 
-  // Reset all chips first
+  /* Reset chips */
   document.querySelectorAll('#causeChips .chip').forEach(function(c) { c.classList.remove('selected'); });
   document.getElementById('otherReasonWrap').classList.remove('visible');
   document.getElementById('fOtherReason').value = '';
@@ -729,6 +810,16 @@ function populateForm(entry) {
     }
   });
 
+  /* Alcohol */
+  document.querySelectorAll('#alcoholToggle .toggle-btn').forEach(function(b) {
+    b.classList.remove('selected-yes', 'selected-no');
+  });
+  if (entry.alcohol === 'yes') {
+    document.querySelector('#alcoholToggle .toggle-btn[data-val="yes"]').classList.add('selected-yes');
+  } else {
+    document.querySelector('#alcoholToggle .toggle-btn[data-val="no"]').classList.add('selected-no');
+  }
+
   renderAwakeningInputs();
   var times = (entry.awakeningTimes || '').split(',');
   document.querySelectorAll('#awakeningTimesWrap input').forEach(function(inp, i) {
@@ -746,6 +837,11 @@ function resetForm() {
   document.getElementById('awakeningTimesWrap').innerHTML = '';
   document.getElementById('otherReasonWrap').classList.remove('visible');
   document.getElementById('fOtherReason').value = '';
+  /* Reset alcohol to No */
+  document.querySelectorAll('#alcoholToggle .toggle-btn').forEach(function(b) {
+    b.classList.remove('selected-yes', 'selected-no');
+  });
+  document.querySelector('#alcoholToggle .toggle-btn[data-val="no"]').classList.add('selected-no');
   document.getElementById('saveBtn').innerHTML = '<i class="fa-solid fa-check"></i> Save Entry';
 }
 
@@ -808,6 +904,7 @@ function renderHistory() {
         if (c) causeTags += '<span class="entry-cause-tag">' + escHtml(formatCauseLabel(c)) + '</span>';
       });
     }
+    var alcoholTag = e.alcohol === 'yes' ? '<span class="entry-cause-tag" style="background:rgba(245,194,138,0.15);color:var(--warm);"><i class="fa-solid fa-wine-glass" style="margin-right:3px;font-size:10px;"></i>Alcohol</span>' : '';
     html += '<div class="entry-card" data-id="' + e.id + '">' +
       '<div class="entry-date">' + formatDate(e.date) + '</div>' +
       '<div class="entry-metrics">' +
@@ -817,7 +914,7 @@ function renderHistory() {
         '<span><i class="fa-solid fa-bell"></i> ' + (e.awakeCount || 0) + ' wake-ups</span>' +
         (latency > 0 ? '<span><i class="fa-solid fa-hourglass-half"></i> ' + latency + 'm to sleep</span>' : '') +
       '</div>' +
-      (causeTags ? '<div class="entry-causes">' + causeTags + '</div>' : '') +
+      (causeTags || alcoholTag ? '<div class="entry-causes">' + causeTags + alcoholTag + '</div>' : '') +
       (e.notes ? '<div style="font-size:12px;color:var(--text3);margin-top:6px;"><i class="fa-solid fa-note-sticky"></i> ' + escHtml(e.notes) + '</div>' : '') +
       '<div style="display:flex;gap:8px;margin-top:12px;">' +
         '<button class="btn btn-outline btn-sm" onclick="populateForm(entries.find(function(x){return x.id===\'' + e.id + '\'}))"><i class="fa-solid fa-pen"></i> Edit</button>' +
@@ -830,19 +927,26 @@ function renderHistory() {
 
 /* ============ INSIGHTS ============ */
 function renderInsights() {
-  if (entries.length < 2) {
+  var filtered = getFilteredEntries();
+  var countEl = document.getElementById('filteredCount');
+  if (insightFilter !== 'all') {
+    countEl.textContent = 'Showing ' + filtered.length + ' of ' + entries.length + ' entries';
+  } else {
+    countEl.textContent = '';
+  }
+  if (filtered.length < 2) {
     document.getElementById('metricsGrid').innerHTML = '';
-    document.getElementById('observations').innerHTML = '<div class="empty-state"><i class="fa-solid fa-chart-column"></i><p>Need at least 2 entries<br>to show insights and patterns.</p></div>';
+    document.getElementById('observations').innerHTML = '<div class="empty-state"><i class="fa-solid fa-chart-column"></i><p>Need at least 2 entries in this range<br>to show insights and patterns.</p></div>';
     return;
   }
-  renderMetricCards();
-  renderCharts();
-  renderObservations();
+  renderMetricCards(filtered);
+  renderCharts(filtered);
+  renderObservations(filtered);
 }
 
-function renderMetricCards() {
-  var avgDur = 0, avgLat = 0, avgEff = 0, avgAwake = 0, count = entries.length;
-  entries.forEach(function(e) {
+function renderMetricCards(data) {
+  var avgDur = 0, avgLat = 0, avgEff = 0, avgAwake = 0, count = data.length;
+  data.forEach(function(e) {
     var dur = calcDuration(e.fallAsleepTime, e.wakeUpTime);
     avgDur += dur.h + dur.m / 60;
     avgLat += calcMinutes(e.bedTime, e.fallAsleepTime);
@@ -869,20 +973,18 @@ function metricHtml(label, value, cls) {
   return '<div class="metric-card ' + cls + '"><div class="metric-value">' + value + '</div><div class="metric-label">' + label + '</div></div>';
 }
 
-function renderCharts() {
-  var sorted = entries.slice().sort(function(a, b) { return a.date.localeCompare(b.date); });
+function renderCharts(data) {
+  var sorted = data.slice().sort(function(a, b) { return a.date.localeCompare(b.date); });
   var labels = sorted.map(function(e) { return e.date.slice(5); });
   var isLight = document.documentElement.classList.contains('light');
   var gridColor = isLight ? 'rgba(100,50,150,0.06)' : 'rgba(255,255,255,0.05)';
   var textColor = isLight ? '#7a6896' : '#b8aed0';
 
-  // Duration chart
   var durData = sorted.map(function(e) { var d = calcDuration(e.fallAsleepTime, e.wakeUpTime); return +(d.h + d.m / 60).toFixed(2); });
   renderLineChart('chartDuration', labels, [
     { label: 'Hours', data: durData, borderColor: '#c9a0dc', backgroundColor: 'rgba(201,160,220,0.1)', fill: true, tension: 0.4 }
   ], gridColor, textColor);
 
-  // Times chart
   var bedData = sorted.map(function(e) { return timeToDecimal(e.bedTime); });
   var wakeData = sorted.map(function(e) { return timeToDecimal(e.wakeUpTime); });
   renderLineChart('chartTimes', labels, [
@@ -894,9 +996,8 @@ function renderCharts() {
     return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
   });
 
-  // Causes chart - normalize cause labels
   var causeCount = {};
-  entries.forEach(function(e) {
+  data.forEach(function(e) {
     if (e.causes) e.causes.split(',').forEach(function(c) {
       if (c) {
         var label = formatCauseLabel(c);
@@ -947,22 +1048,38 @@ function renderLineChart(canvasId, labels, datasets, gridColor, textColor, tickC
   });
 }
 
-function renderObservations() {
+function renderObservations(data) {
   var obs = [];
   var avgLat = 0, avgDur = 0, avgAwake = 0;
   var melatoninDays = [], noMelatoninDays = [];
+  var alcoholDays = [], noAlcoholDays = [];
+  var melTimingData = [];
   var causeCount = {};
   var bedTimes = [];
 
-  entries.forEach(function(e) {
+  data.forEach(function(e) {
     var lat = calcMinutes(e.bedTime, e.fallAsleepTime);
     var dur = calcDuration(e.fallAsleepTime, e.wakeUpTime);
     var durH = dur.h + dur.m / 60;
+    var awakeN = parseInt(e.awakeCount) || 0;
     avgLat += lat; avgDur += durH;
-    avgAwake += (parseInt(e.awakeCount) || 0);
+    avgAwake += awakeN;
     bedTimes.push(timeToDecimal(e.bedTime));
-    if (e.melatoninTime) melatoninDays.push({ lat: lat, dur: durH });
-    else noMelatoninDays.push({ lat: lat, dur: durH });
+
+    if (e.melatoninTime) {
+      melatoninDays.push({ lat: lat, dur: durH, awake: awakeN });
+      var melToBed = calcMinutes(e.melatoninTime, e.bedTime);
+      melTimingData.push({ gap: melToBed, lat: lat, awake: awakeN, dur: durH });
+    } else {
+      noMelatoninDays.push({ lat: lat, dur: durH, awake: awakeN });
+    }
+
+    if (e.alcohol === 'yes') {
+      alcoholDays.push({ lat: lat, dur: durH, awake: awakeN });
+    } else {
+      noAlcoholDays.push({ lat: lat, dur: durH, awake: awakeN });
+    }
+
     if (e.causes) e.causes.split(',').forEach(function(c) {
       if (c) {
         var label = formatCauseLabel(c);
@@ -970,34 +1087,38 @@ function renderObservations() {
       }
     });
   });
-  var n = entries.length;
+  var n = data.length;
   avgLat /= n; avgDur /= n; avgAwake /= n;
 
+  /* Sleep latency */
   if (avgLat > 30) {
     obs.push({ cls: 'bad', icon: 'fa-hourglass-half', text: 'Average sleep latency is <b>' + Math.round(avgLat) + ' min</b> (>30 min is an insomnia indicator). Try a consistent wind-down routine.' });
   } else if (avgLat > 15) {
     obs.push({ cls: 'warn', icon: 'fa-hourglass-half', text: 'Average sleep latency is <b>' + Math.round(avgLat) + ' min</b>. Fairly normal, but could improve with relaxation techniques.' });
   } else {
-    obs.push({ cls: 'good', icon: 'fa-hourglass-half', text: 'Average sleep latency is <b>' + Math.round(avgLat) + ' min</b>. You fall asleep quickly — great sign!' });
+    obs.push({ cls: 'good', icon: 'fa-hourglass-half', text: 'Average sleep latency is <b>' + Math.round(avgLat) + ' min</b>. You fall asleep quickly \u2014 great sign!' });
   }
 
+  /* Sleep duration */
   if (avgDur < 6) {
-    obs.push({ cls: 'bad', icon: 'fa-clock', text: 'Average sleep is only <b>' + avgDur.toFixed(1) + ' hours</b>. Adults need 7–9 hours for optimal health.' });
+    obs.push({ cls: 'bad', icon: 'fa-clock', text: 'Average sleep is only <b>' + avgDur.toFixed(1) + ' hours</b>. Adults need 7\u20139 hours for optimal health.' });
   } else if (avgDur < 7) {
-    obs.push({ cls: 'warn', icon: 'fa-clock', text: 'Average sleep is <b>' + avgDur.toFixed(1) + ' hours</b>. Slightly under the recommended 7–9 hours.' });
+    obs.push({ cls: 'warn', icon: 'fa-clock', text: 'Average sleep is <b>' + avgDur.toFixed(1) + ' hours</b>. Slightly under the recommended 7\u20139 hours.' });
   } else {
-    obs.push({ cls: 'good', icon: 'fa-clock', text: 'Average sleep is <b>' + avgDur.toFixed(1) + ' hours</b>. Within the healthy 7–9 hour range!' });
+    obs.push({ cls: 'good', icon: 'fa-clock', text: 'Average sleep is <b>' + avgDur.toFixed(1) + ' hours</b>. Within the healthy 7\u20139 hour range!' });
   }
 
+  /* Bedtime consistency */
   var bedStd = stdDev(bedTimes);
   if (bedStd > 1.5) {
-    obs.push({ cls: 'bad', icon: 'fa-bed', text: 'Bedtime varies a lot (±' + bedStd.toFixed(1) + ' hrs). Irregular schedules worsen insomnia. Aim for the same bedtime daily.' });
+    obs.push({ cls: 'bad', icon: 'fa-bed', text: 'Bedtime varies a lot (\u00b1' + bedStd.toFixed(1) + ' hrs). Irregular schedules worsen insomnia.' });
   } else if (bedStd > 0.75) {
-    obs.push({ cls: 'warn', icon: 'fa-bed', text: 'Bedtime has moderate variation (±' + bedStd.toFixed(1) + ' hrs). More consistency may help.' });
+    obs.push({ cls: 'warn', icon: 'fa-bed', text: 'Bedtime has moderate variation (\u00b1' + bedStd.toFixed(1) + ' hrs). More consistency may help.' });
   } else {
-    obs.push({ cls: 'good', icon: 'fa-bed', text: 'Bedtime is very consistent (±' + bedStd.toFixed(1) + ' hrs). Great sleep hygiene!' });
+    obs.push({ cls: 'good', icon: 'fa-bed', text: 'Bedtime is very consistent (\u00b1' + bedStd.toFixed(1) + ' hrs). Great sleep hygiene!' });
   }
 
+  /* Melatonin effectiveness */
   if (melatoninDays.length >= 2 && noMelatoninDays.length >= 2) {
     var melAvgLat = melatoninDays.reduce(function(s, d) { return s + d.lat; }, 0) / melatoninDays.length;
     var noMelAvgLat = noMelatoninDays.reduce(function(s, d) { return s + d.lat; }, 0) / noMelatoninDays.length;
@@ -1009,6 +1130,57 @@ function renderObservations() {
     }
   }
 
+  /* Melatonin timing vs bed time analysis */
+  if (melTimingData.length >= 3) {
+    var avgGap = melTimingData.reduce(function(s, d) { return s + d.gap; }, 0) / melTimingData.length;
+    var earlyMel = melTimingData.filter(function(d) { return d.gap >= 30; });
+    var lateMel = melTimingData.filter(function(d) { return d.gap < 30; });
+
+    if (earlyMel.length >= 2 && lateMel.length >= 2) {
+      var earlyAvgLat = earlyMel.reduce(function(s, d) { return s + d.lat; }, 0) / earlyMel.length;
+      var lateAvgLat = lateMel.reduce(function(s, d) { return s + d.lat; }, 0) / lateMel.length;
+      var earlyAvgAwake = earlyMel.reduce(function(s, d) { return s + d.awake; }, 0) / earlyMel.length;
+      var lateAvgAwake = lateMel.reduce(function(s, d) { return s + d.awake; }, 0) / lateMel.length;
+
+      if (earlyAvgLat < lateAvgLat - 5 || earlyAvgAwake < lateAvgAwake - 0.5) {
+        obs.push({ cls: 'good', icon: 'fa-clock-rotate-left', text: 'Taking melatonin <b>30+ min before bed</b> works better for you: latency ' + Math.round(earlyAvgLat) + ' vs ' + Math.round(lateAvgLat) + ' min, awakenings ' + earlyAvgAwake.toFixed(1) + ' vs ' + lateAvgAwake.toFixed(1) + '.' });
+      } else if (lateAvgLat < earlyAvgLat - 5) {
+        obs.push({ cls: 'warn', icon: 'fa-clock-rotate-left', text: 'Interestingly, taking melatonin <b>closer to bedtime</b> (&lt;30 min) seems to work better: latency ' + Math.round(lateAvgLat) + ' vs ' + Math.round(earlyAvgLat) + ' min.' });
+      } else {
+        obs.push({ cls: 'warn', icon: 'fa-clock-rotate-left', text: 'Melatonin timing (avg ' + Math.round(avgGap) + ' min before bed) doesn\u2019t show a strong pattern yet. Experts recommend 30\u201360 min before bed.' });
+      }
+    } else {
+      obs.push({ cls: 'warn', icon: 'fa-clock-rotate-left', text: 'Melatonin is taken on avg <b>' + Math.round(avgGap) + ' min</b> before bed. Optimal is 30\u201360 min. Try varying the timing to find what works best.' });
+    }
+  }
+
+  /* Alcohol impact */
+  if (alcoholDays.length >= 2 && noAlcoholDays.length >= 2) {
+    var alcAvgAwake = alcoholDays.reduce(function(s, d) { return s + d.awake; }, 0) / alcoholDays.length;
+    var noAlcAvgAwake = noAlcoholDays.reduce(function(s, d) { return s + d.awake; }, 0) / noAlcoholDays.length;
+    var alcAvgDur = alcoholDays.reduce(function(s, d) { return s + d.dur; }, 0) / alcoholDays.length;
+    var noAlcAvgDur = noAlcoholDays.reduce(function(s, d) { return s + d.dur; }, 0) / noAlcoholDays.length;
+    var alcAvgLat = alcoholDays.reduce(function(s, d) { return s + d.lat; }, 0) / alcoholDays.length;
+    var noAlcAvgLat = noAlcoholDays.reduce(function(s, d) { return s + d.lat; }, 0) / noAlcoholDays.length;
+
+    var awakeImpact = alcAvgAwake - noAlcAvgAwake;
+    var durImpact = noAlcAvgDur - alcAvgDur;
+
+    if (awakeImpact > 0.5 || durImpact > 0.3) {
+      var details = [];
+      if (awakeImpact > 0.5) details.push('awakenings ' + alcAvgAwake.toFixed(1) + ' vs ' + noAlcAvgAwake.toFixed(1));
+      if (durImpact > 0.3) details.push('sleep ' + alcAvgDur.toFixed(1) + 'h vs ' + noAlcAvgDur.toFixed(1) + 'h');
+      obs.push({ cls: 'bad', icon: 'fa-wine-glass', text: '<b>Alcohol hurts your sleep</b>: ' + details.join(', ') + '. Consider reducing evening alcohol.' });
+    } else if (alcAvgLat < noAlcAvgLat - 5 && awakeImpact > 0) {
+      obs.push({ cls: 'warn', icon: 'fa-wine-glass', text: 'Alcohol helps you <b>fall asleep faster</b> (' + Math.round(alcAvgLat) + ' vs ' + Math.round(noAlcAvgLat) + ' min) but causes <b>more awakenings</b> (' + alcAvgAwake.toFixed(1) + ' vs ' + noAlcAvgAwake.toFixed(1) + ').' });
+    } else {
+      obs.push({ cls: 'good', icon: 'fa-wine-glass', text: 'Alcohol doesn\u2019t appear to significantly impact your sleep quality based on current data.' });
+    }
+  } else if (alcoholDays.length >= 1) {
+    obs.push({ cls: 'warn', icon: 'fa-wine-glass', text: 'Alcohol was logged on <b>' + alcoholDays.length + '</b> night(s). Need more data with and without alcohol to analyze its impact.' });
+  }
+
+  /* Top awakening cause */
   var topCause = Object.keys(causeCount).sort(function(a, b) { return causeCount[b] - causeCount[a]; })[0];
   if (topCause) {
     var pct = Math.round(causeCount[topCause] / n * 100);
@@ -1053,7 +1225,8 @@ function fetchEntries(silent) {
             awakeningTimes: String(row.awakeningTimes || ''),
             wakeUpTime: String(row.wakeUpTime || ''),
             causes: String(row.causes || ''),
-            notes: String(row.notes || '')
+            notes: String(row.notes || ''),
+            alcohol: String(row.alcohol || 'no')
           };
         });
         entries.sort(function(a, b) { return b.date.localeCompare(a.date); });
@@ -1071,10 +1244,10 @@ function fetchEntries(silent) {
 
 function postToSheet(action, data) {
   setSyncStatus('syncing', 'Saving to Google Sheet...');
-  doPost(action, data, 0);
+  doPostRetry(action, data, 0);
 }
 
-function doPost(action, data, retryCount) {
+function doPostRetry(action, data, retryCount) {
   fetch(sheetUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1082,7 +1255,6 @@ function doPost(action, data, retryCount) {
     redirect: 'follow'
   })
     .then(function(r) {
-      /* Google Apps Script returns redirect — if we get any 2xx-ish response, treat as success */
       if (r.ok || r.type === 'opaque' || r.redirected) {
         return r.text().then(function(text) {
           try { return JSON.parse(text); } catch (e) { return { status: 'success' }; }
@@ -1094,14 +1266,12 @@ function doPost(action, data, retryCount) {
       if (result.status === 'error') throw new Error(result.message || 'Sheet error');
       setSyncStatus('connected', '\u2713 Saved \u2022 ' + new Date().toLocaleTimeString());
       showToast('\u2713 Saved to Google Sheet!');
-      /* Re-fetch after 2s to verify the data is actually on the sheet */
       setTimeout(function() { fetchEntries(true); }, 2000);
     })
     .catch(function(err) {
       if (retryCount < 2) {
-        /* Retry up to 2 times with increasing delay */
         setSyncStatus('syncing', 'Retrying save... (attempt ' + (retryCount + 2) + '/3)');
-        setTimeout(function() { doPost(action, data, retryCount + 1); }, 1500 * (retryCount + 1));
+        setTimeout(function() { doPostRetry(action, data, retryCount + 1); }, 1500 * (retryCount + 1));
       } else {
         setSyncStatus('error', '\u2717 Save failed: ' + err.message + ' \u2022 Tap to retry');
         showToast('Save failed after 3 attempts: ' + err.message);
@@ -1114,7 +1284,6 @@ function setSyncStatus(state, text) {
   var btn = document.getElementById('syncBtn');
   var bar = document.getElementById('syncBar');
   var barText = document.getElementById('syncText');
-
   dot.className = 'sync-dot' + (state ? ' ' + state : '');
   btn.className = 'sync-btn' + (state === 'syncing' ? ' syncing' : '');
   bar.className = 'sync-bar' + (state === 'connected' ? ' success' : state === 'error' ? ' error' : state === 'syncing' ? ' saving' : '');
@@ -1205,12 +1374,12 @@ function showModal(title, message, onConfirm) {
       '</div>' +
     '</div>';
   document.getElementById('modalContainer').appendChild(overlay);
-
   overlay.querySelector('#modalCloseBtn').addEventListener('click', function() { overlay.remove(); });
   overlay.querySelector('#modalCancelBtn').addEventListener('click', function() { overlay.remove(); });
   overlay.querySelector('#modalConfirmBtn').addEventListener('click', function() { overlay.remove(); onConfirm(); });
   overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 }
+
 
 </script>
 </body>
