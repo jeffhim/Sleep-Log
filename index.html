@@ -489,12 +489,12 @@ html.light .deco-stars span { opacity: 0.12; color: var(--accent); }
     <form id="sleepForm" autocomplete="off">
       <div class="form-group">
         <label class="form-label">Date</label>
-        <input type="date" class="form-input" id="fDate" required>
+        <input type="date" class="form-input" id="fDate">
       </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Bed Time</label>
-          <input type="time" class="form-input" id="fBedTime" required>
+          <input type="time" class="form-input" id="fBedTime">
         </div>
         <div class="form-group">
           <label class="form-label">Melatonin Time</label>
@@ -505,11 +505,11 @@ html.light .deco-stars span { opacity: 0.12; color: var(--accent); }
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Fall Asleep Time</label>
-          <input type="time" class="form-input" id="fFallAsleep" required>
+          <input type="time" class="form-input" id="fFallAsleep">
         </div>
         <div class="form-group">
           <label class="form-label">Wake Up Time</label>
-          <input type="time" class="form-input" id="fWakeUp" required>
+          <input type="time" class="form-input" id="fWakeUp">
         </div>
       </div>
       <div class="form-group">
@@ -903,10 +903,7 @@ function resetForm() {
 /* ============ SAVE / EDIT / DELETE ============ */
 function saveEntry() {
   var data = getFormData();
-  if (!data.date || !data.bedTime || !data.fallAsleepTime || !data.wakeUpTime) {
-    showToast('Please fill in required fields');
-    return;
-  }
+  if (!data.date) { data.date = new Date().toISOString().split('T')[0]; }
   if (editId) {
     var idx = entries.findIndex(function(e) { return e.id === editId; });
     if (idx !== -1) entries[idx] = data;
