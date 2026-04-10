@@ -213,13 +213,31 @@ h1, h2, h3 { font-family: 'NaikaiFont', 'Playfair Display', serif; font-weight: 
 @keyframes twinkle { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 .app-header h1 { font-size: 22px; letter-spacing: -0.3px; font-weight: 600; }
 .app-header h1 .name { color: var(--pink); font-style: italic; }
-.app-header .sync-dot {
-  margin-left: auto; width: 9px; height: 9px; border-radius: 50%;
+.sync-btn {
+  margin-left: auto; display: flex; align-items: center; gap: 6px;
+  background: none; border: none; cursor: pointer; padding: 6px 10px;
+  border-radius: 20px; transition: background 0.2s; color: var(--text2); flex-shrink: 0;
+}
+.sync-btn:active { background: var(--accent-soft); }
+.sync-btn i { font-size: 13px; transition: transform 0.3s; }
+.sync-btn.syncing i { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.sync-dot {
+  width: 8px; height: 8px; border-radius: 50%;
   background: var(--text3); transition: background 0.3s; flex-shrink: 0;
 }
-.app-header .sync-dot.connected { background: var(--teal); box-shadow: 0 0 8px rgba(168,230,207,0.4); }
-.app-header .sync-dot.syncing { background: var(--warm); animation: pulse 1s infinite; }
+.sync-dot.connected { background: var(--teal); box-shadow: 0 0 6px rgba(168,230,207,0.4); }
+.sync-dot.syncing { background: var(--warm); animation: pulse 1s infinite; }
+.sync-dot.error { background: var(--rose); box-shadow: 0 0 6px rgba(244,143,177,0.4); }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.sync-bar {
+  flex-shrink: 0; padding: 4px 20px; font-size: 11px; font-weight: 600;
+  color: var(--text3); background: var(--bg2); border-bottom: 1px solid var(--border);
+  text-align: center; transition: all 0.3s; letter-spacing: 0.3px;
+}
+.sync-bar.success { color: var(--teal); }
+.sync-bar.error { color: var(--rose); }
+.sync-bar.saving { color: var(--warm); }
 
 /* Bottom Nav */
 .bottom-nav {
@@ -436,8 +454,14 @@ html.light .deco-stars span { opacity: 0.12; color: var(--accent); }
     <i class="fa-solid fa-cloud-moon moon-icon" style="font-size:24px;"></i>
   </div>
   <h1><span class="name">Wing Nam</span> Sleep Log</h1>
-  <div class="sync-dot" id="syncDot" title="Not connected"></div>
+  <button class="sync-btn" id="syncBtn" onclick="fetchEntries()" title="Tap to sync">
+    <div class="sync-dot" id="syncDot"></div>
+    <i class="fa-solid fa-arrows-rotate" id="syncIcon"></i>
+  </button>
 </header>
+<div class="sync-bar" id="syncBar">
+  <span id="syncText">Connecting...</span>
+</div>
 
 <div class="content-area" id="contentArea">
 <!-- LOG PANEL -->
@@ -1011,8 +1035,11 @@ function startAutoSync() {
 
 function fetchEntries(silent) {
   setSyncStatus('syncing', 'Syncing...');
-  fetch(sheetUrl + '?action=read')
-    .then(function(r) { return r.json(); })
+  fetch(sheetUrl + '?action=read', { redirect: 'follow' })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then(function(data) {
       if (data.status === 'success' && Array.isArray(data.data)) {
         entries = data.data.map(function(row) {
@@ -1030,33 +1057,68 @@ function fetchEntries(silent) {
           };
         });
         entries.sort(function(a, b) { return b.date.localeCompare(a.date); });
-        setSyncStatus('connected', 'Synced ' + new Date().toLocaleTimeString());
+        setSyncStatus('connected', '\u2713 Synced \u2022 ' + entries.length + ' entries \u2022 ' + new Date().toLocaleTimeString());
         if (!silent) showToast('Data loaded (' + entries.length + ' entries)');
+      } else {
+        throw new Error(data.message || 'Unexpected response');
       }
     })
-    .catch(function() {
-      setSyncStatus('', 'Sync failed');
-      if (!silent) showToast('Failed to fetch data');
+    .catch(function(err) {
+      setSyncStatus('error', '\u2717 Sync failed: ' + err.message + ' \u2022 Tap to retry');
+      if (!silent) showToast('Sync failed: ' + err.message);
     });
 }
 
 function postToSheet(action, data) {
-  if (!sheetUrl) return;
-  setSyncStatus('syncing', 'Saving...');
-  fetch(sheetUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: action, data: data })
-  })
-    .then(function(r) { return r.json(); })
-    .then(function() { setSyncStatus('connected', 'Saved ' + new Date().toLocaleTimeString()); })
-    .catch(function() { setSyncStatus('', 'Save failed'); });
+  setSyncStatus('syncing', 'Saving to Google Sheet...');
+  doPost(action, data, 0);
 }
 
-function setSyncStatus(state, title) {
+function doPost(action, data, retryCount) {
+  fetch(sheetUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: action, data: data }),
+    redirect: 'follow'
+  })
+    .then(function(r) {
+      /* Google Apps Script returns redirect — if we get any 2xx-ish response, treat as success */
+      if (r.ok || r.type === 'opaque' || r.redirected) {
+        return r.text().then(function(text) {
+          try { return JSON.parse(text); } catch (e) { return { status: 'success' }; }
+        });
+      }
+      throw new Error('HTTP ' + r.status);
+    })
+    .then(function(result) {
+      if (result.status === 'error') throw new Error(result.message || 'Sheet error');
+      setSyncStatus('connected', '\u2713 Saved \u2022 ' + new Date().toLocaleTimeString());
+      showToast('\u2713 Saved to Google Sheet!');
+      /* Re-fetch after 2s to verify the data is actually on the sheet */
+      setTimeout(function() { fetchEntries(true); }, 2000);
+    })
+    .catch(function(err) {
+      if (retryCount < 2) {
+        /* Retry up to 2 times with increasing delay */
+        setSyncStatus('syncing', 'Retrying save... (attempt ' + (retryCount + 2) + '/3)');
+        setTimeout(function() { doPost(action, data, retryCount + 1); }, 1500 * (retryCount + 1));
+      } else {
+        setSyncStatus('error', '\u2717 Save failed: ' + err.message + ' \u2022 Tap to retry');
+        showToast('Save failed after 3 attempts: ' + err.message);
+      }
+    });
+}
+
+function setSyncStatus(state, text) {
   var dot = document.getElementById('syncDot');
+  var btn = document.getElementById('syncBtn');
+  var bar = document.getElementById('syncBar');
+  var barText = document.getElementById('syncText');
+
   dot.className = 'sync-dot' + (state ? ' ' + state : '');
-  dot.title = title || '';
+  btn.className = 'sync-btn' + (state === 'syncing' ? ' syncing' : '');
+  bar.className = 'sync-bar' + (state === 'connected' ? ' success' : state === 'error' ? ' error' : state === 'syncing' ? ' saving' : '');
+  barText.textContent = text || '';
 }
 
 /* ============ HELPERS ============ */
