@@ -435,6 +435,21 @@ html.light .modal-overlay { background: rgba(80,50,100,0.25); }
 ::-webkit-scrollbar-thumb { background: var(--text3); border-radius: 4px; }
 
 
+/* Install banner */
+.install-banner {
+  position: fixed; bottom: 70px; left: 12px; right: 12px; z-index: 200;
+  animation: slideUp 0.35s ease;
+}
+.install-banner-inner {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.install-banner-text { display: flex; align-items: center; gap: 12px; }
+.install-banner-text b { color: var(--text); font-size: 14px; }
+.install-banner-btns { display: flex; gap: 8px; }
+.install-banner-btns .btn { flex: 1; }
+
 /* Decorative stars scattered */
 .deco-stars {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 0; overflow: hidden;
@@ -595,6 +610,46 @@ var charts = {};
 var insightFilter = 'all';
 var customStart = '';
 var customEnd = '';
+
+/* ============ PWA INSTALL ============ */
+var deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  showInstallBanner();
+});
+
+function showInstallBanner() {
+  if (document.getElementById('installBanner')) return;
+  var banner = document.createElement('div');
+  banner.id = 'installBanner';
+  banner.className = 'install-banner';
+  banner.innerHTML =
+    '<div class="install-banner-inner">' +
+      '<div class="install-banner-text">' +
+        '<i class="fa-solid fa-cloud-moon" style="color:var(--pink);font-size:20px;"></i>' +
+        '<div><b>安裝 Sleep Log App</b><br><span style="font-size:11px;color:var(--text2);">加到主畫面，像 App 一樣使用</span></div>' +
+      '</div>' +
+      '<div class="install-banner-btns">' +
+        '<button class="btn btn-primary btn-sm" id="installAcceptBtn"><i class="fa-solid fa-download"></i> 安裝</button>' +
+        '<button class="btn btn-outline btn-sm" id="installDismissBtn">之後</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(banner);
+  document.getElementById('installAcceptBtn').addEventListener('click', function() {
+    banner.remove();
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function() { deferredPrompt = null; });
+    }
+  });
+  document.getElementById('installDismissBtn').addEventListener('click', function() { banner.remove(); });
+}
+
+/* Register Service Worker */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function() {});
+}
 
 /* ============ INIT ============ */
 (function init() {
