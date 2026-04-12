@@ -486,7 +486,7 @@ html.light .deco-stars span { opacity: 0.12; color: var(--accent); }
 <div class="panel active" id="panelLog">
   <div class="card">
     <div class="card-title"><i class="fa-solid fa-bed"></i> Log Sleep</div>
-    <form id="sleepForm" autocomplete="off">
+    <form id="sleepForm" autocomplete="off" novalidate>
       <div class="form-group">
         <label class="form-label">Date</label>
         <input type="date" class="form-input" id="fDate">
@@ -700,6 +700,7 @@ function setupNav() {
       document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
       btn.classList.add('active');
       document.getElementById(btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'panelLog') resetForm();
       if (btn.dataset.tab === 'panelInsights') renderInsights();
       if (btn.dataset.tab === 'panelHistory') renderHistory();
     });
@@ -818,7 +819,9 @@ function getFormData() {
   document.querySelectorAll('#awakeningTimesWrap input').forEach(function(inp) {
     if (inp.value) awakeTimes.push(inp.value);
   });
-  var alcoholBtn = document.querySelector('#alcoholToggle .toggle-btn.selected-yes');
+  var alcoholYes = document.querySelector('#alcoholToggle .toggle-btn.selected-yes');
+  var alcoholNo = document.querySelector('#alcoholToggle .toggle-btn.selected-no');
+  var alcoholVal = alcoholYes ? 'yes' : (alcoholNo ? 'no' : '');
   return {
     id: editId || generateId(),
     date: document.getElementById('fDate').value,
@@ -830,7 +833,7 @@ function getFormData() {
     wakeUpTime: document.getElementById('fWakeUp').value,
     causes: causes.join(','),
     notes: document.getElementById('fNotes').value,
-    alcohol: alcoholBtn ? 'yes' : 'no'
+    alcohol: alcoholVal
   };
 }
 
@@ -892,11 +895,10 @@ function resetForm() {
   document.getElementById('awakeningTimesWrap').innerHTML = '';
   document.getElementById('otherReasonWrap').classList.remove('visible');
   document.getElementById('fOtherReason').value = '';
-  /* Reset alcohol to No */
+  /* Reset alcohol - no default */
   document.querySelectorAll('#alcoholToggle .toggle-btn').forEach(function(b) {
     b.classList.remove('selected-yes', 'selected-no');
   });
-  document.querySelector('#alcoholToggle .toggle-btn[data-val="no"]').classList.add('selected-no');
   document.getElementById('saveBtn').innerHTML = '<i class="fa-solid fa-check"></i> Save Entry';
 }
 
@@ -920,8 +922,13 @@ function saveEntry() {
     }
   }
   entries.sort(function(a, b) { return b.date.localeCompare(a.date); });
-  showToast(editId ? 'Entry updated!' : 'Entry saved!');
+  var wasEdit = !!editId;
+  showToast(wasEdit ? 'Entry updated!' : 'Entry saved!');
   resetForm();
+  if (wasEdit) {
+    renderHistory();
+    switchTab('panelHistory');
+  }
 }
 
 function deleteEntry(id) {
