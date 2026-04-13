@@ -967,10 +967,12 @@ function renderHistory() {
     html += '<div class="entry-card" data-id="' + e.id + '">' +
       '<div class="entry-date">' + formatDate(e.date) + '</div>' +
       '<div class="entry-metrics">' +
-        '<span><i class="fa-solid fa-clock"></i> ' + dur.h + 'h ' + dur.m + 'm</span>' +
-        '<span><i class="fa-solid fa-bed"></i> ' + fmtTime(e.bedTime) + '</span>' +
-        '<span><i class="fa-solid fa-sun"></i> ' + fmtTime(e.wakeUpTime) + '</span>' +
+        (dur.h || dur.m ? '<span><i class="fa-solid fa-clock"></i> ' + dur.h + 'h ' + dur.m + 'm</span>' : '') +
+        (e.bedTime ? '<span><i class="fa-solid fa-bed"></i> ' + fmtTime(e.bedTime) + '</span>' : '') +
+        (e.fallAsleepTime ? '<span><i class="fa-solid fa-moon"></i> ' + fmtTime(e.fallAsleepTime) + '</span>' : '') +
+        (e.wakeUpTime ? '<span><i class="fa-solid fa-sun"></i> ' + fmtTime(e.wakeUpTime) + '</span>' : '') +
         '<span><i class="fa-solid fa-bell"></i> ' + (e.awakeCount || 0) + ' wake-ups</span>' +
+        (e.melatoninTime ? '<span><i class="fa-solid fa-pills"></i> ' + fmtTime(e.melatoninTime) + '</span>' : '') +
         (latency > 0 ? '<span><i class="fa-solid fa-hourglass-half"></i> ' + latency + 'm to sleep</span>' : '') +
       '</div>' +
       (causeTags || alcoholTag ? '<div class="entry-causes">' + causeTags + alcoholTag + '</div>' : '') +
