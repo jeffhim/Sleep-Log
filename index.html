@@ -1258,6 +1258,65 @@ function renderObservations(data) {
   document.getElementById('observations').innerHTML = html || '<div class="observation">Not enough data yet for pattern detection.</div>';
 }
 
+/* ============ GOOGLE SHEETS DATA PARSING ============ */
+/* Google Sheets returns Date objects serialized as ISO strings or fractional numbers.
+   These helpers normalize any format back to YYYY-MM-DD / HH:MM strings. */
+
+function parseSheetDate(val) {
+  if (!val && val !== 0) return '';
+  var s = String(val).trim();
+  /* Already YYYY-MM-DD */
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  /* ISO string like "2026-04-12T16:00:00.000Z" */
+  if (s.indexOf('T') !== -1) {
+    var d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+  }
+  /* Numeric serial date (Google Sheets epoch = 1899-12-30) */
+  var num = Number(s);
+  if (!isNaN(num) && num > 1000) {
+    var epoch = new Date(1899, 11, 30);
+    epoch.setDate(epoch.getDate() + Math.floor(num));
+    return epoch.getFullYear() + '-' + String(epoch.getMonth() + 1).padStart(2, '0') + '-' + String(epoch.getDate()).padStart(2, '0');
+  }
+  /* Try general Date parse as last resort */
+  var d2 = new Date(s);
+  if (!isNaN(d2.getTime()) && d2.getFullYear() > 1970) {
+    return d2.getFullYear() + '-' + String(d2.getMonth() + 1).padStart(2, '0') + '-' + String(d2.getDate()).padStart(2, '0');
+  }
+  return s;
+}
+
+function parseSheetTime(val) {
+  if (!val && val !== 0) return '';
+  var s = String(val).trim();
+  /* Already HH:MM */
+  if (/^\d{1,2}:\d{2}$/.test(s)) return s.length === 4 ? '0' + s : s;
+  /* HH:MM:SS */
+  if (/^\d{1,2}:\d{2}:\d{2}$/.test(s)) return s.slice(0, 5).padStart(5, '0');
+  /* ISO string with T — extract local time */
+  if (s.indexOf('T') !== -1) {
+    var d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+  }
+  /* Fractional day (e.g. 0.979166 = 23:30) from Google Sheets time cells */
+  var num = Number(s);
+  if (!isNaN(num) && num >= 0 && num < 1) {
+    var totalMin = Math.round(num * 1440);
+    return String(Math.floor(totalMin / 60)).padStart(2, '0') + ':' + String(totalMin % 60).padStart(2, '0');
+  }
+  /* Date string with time info — try parsing */
+  var d2 = new Date(s);
+  if (!isNaN(d2.getTime())) {
+    return String(d2.getHours()).padStart(2, '0') + ':' + String(d2.getMinutes()).padStart(2, '0');
+  }
+  return s;
+}
+
 /* ============ GOOGLE SHEETS ============ */
 function startAutoSync() {
   if (syncInterval) clearInterval(syncInterval);
@@ -1276,16 +1335,16 @@ function fetchEntries(silent) {
         entries = data.data.map(function(row) {
           return {
             id: String(row.id || ''),
-            date: String(row.date || ''),
-            bedTime: String(row.bedTime || ''),
-            melatoninTime: String(row.melatoninTime || ''),
-            fallAsleepTime: String(row.fallAsleepTime || ''),
+            date: parseSheetDate(row.date),
+            bedTime: parseSheetTime(row.bedTime),
+            melatoninTime: parseSheetTime(row.melatoninTime),
+            fallAsleepTime: parseSheetTime(row.fallAsleepTime),
             awakeCount: parseInt(row.awakeCount) || 0,
             awakeningTimes: String(row.awakeningTimes || ''),
-            wakeUpTime: String(row.wakeUpTime || ''),
+            wakeUpTime: parseSheetTime(row.wakeUpTime),
             causes: String(row.causes || ''),
             notes: String(row.notes || ''),
-            alcohol: String(row.alcohol || 'no')
+            alcohol: String(row.alcohol || '')
           };
         });
         entries.sort(function(a, b) { return b.date.localeCompare(a.date); });
