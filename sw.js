@@ -1,4 +1,4 @@
-var CACHE_NAME = 'sleep-log-v3';
+var CACHE_NAME = 'sleep-log-v4';
 var STATIC_ASSETS = [
   './',
   './index.html',
