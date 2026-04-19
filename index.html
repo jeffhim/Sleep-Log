@@ -534,6 +534,13 @@ html.light .deco-stars span { opacity: 0.12; color: var(--accent); }
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label"><i class="fa-solid fa-weight-scale" style="margin-right:4px;"></i> Wake Up Weight (after toilet)</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="number" class="form-input" id="fWeight" step="0.1" min="20" max="200" placeholder="e.g. 52.3" style="flex:1;">
+          <span style="color:var(--text2);font-weight:700;font-size:14px;">kg</span>
+        </div>
+      </div>
+      <div class="form-group">
         <label class="form-label"><i class="fa-solid fa-wine-glass" style="margin-right:4px;"></i> Alcohol Today?</label>
         <div class="toggle-group" id="alcoholToggle">
           <button type="button" class="toggle-btn selected-no" data-val="no"><i class="fa-solid fa-xmark"></i> No</button>
@@ -578,6 +585,11 @@ html.light .deco-stars span { opacity: 0.12; color: var(--accent); }
   <div class="card">
     <div class="card-title"><i class="fa-solid fa-clock"></i> Bed & Wake Times</div>
     <div class="chart-wrap"><canvas id="chartTimes"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-weight-scale"></i> Body Weight Trend</div>
+    <div class="chart-wrap" style="height:260px;"><canvas id="chartWeight"></canvas></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center;">Shaded area = healthy BMI range (18.5–22.9) for 163cm</div>
   </div>
   <div class="card">
     <div class="card-title"><i class="fa-solid fa-chart-pie"></i> Awakening Causes</div>
@@ -834,7 +846,8 @@ function getFormData() {
     wakeUpTime: document.getElementById('fWakeUp').value,
     causes: causes.join(','),
     notes: document.getElementById('fNotes').value,
-    alcohol: alcoholVal
+    alcohol: alcoholVal,
+    weight: document.getElementById('fWeight').value
   };
 }
 
@@ -847,6 +860,7 @@ function populateForm(entry) {
   document.getElementById('fWakeUp').value = entry.wakeUpTime;
   document.getElementById('fAwakeCount').value = entry.awakeCount || 0;
   document.getElementById('fNotes').value = entry.notes || '';
+  document.getElementById('fWeight').value = entry.weight || '';
 
   /* Reset chips */
   document.querySelectorAll('#causeChips .chip').forEach(function(c) { c.classList.remove('selected'); });
@@ -896,6 +910,7 @@ function resetForm() {
   document.getElementById('awakeningTimesWrap').innerHTML = '';
   document.getElementById('otherReasonWrap').classList.remove('visible');
   document.getElementById('fOtherReason').value = '';
+  document.getElementById('fWeight').value = '';
   /* Reset alcohol - no default */
   document.querySelectorAll('#alcoholToggle .toggle-btn').forEach(function(b) {
     b.classList.remove('selected-yes', 'selected-no');
@@ -975,6 +990,7 @@ function renderHistory() {
         '<span><i class="fa-solid fa-bell"></i> ' + (e.awakeCount || 0) + ' wake-ups</span>' +
         (e.melatoninTime ? '<span><i class="fa-solid fa-pills"></i> ' + fmtTime(e.melatoninTime) + '</span>' : '') +
         (latency > 0 ? '<span><i class="fa-solid fa-hourglass-half"></i> ' + latency + 'm to sleep</span>' : '') +
+        (e.weight ? '<span><i class="fa-solid fa-weight-scale"></i> ' + e.weight + ' kg</span>' : '') +
       '</div>' +
       (causeTags || alcoholTag ? '<div class="entry-causes">' + causeTags + alcoholTag + '</div>' : '') +
       (e.notes ? '<div style="font-size:12px;color:var(--text3);margin-top:6px;"><i class="fa-solid fa-note-sticky"></i> ' + escHtml(e.notes) + '</div>' : '') +
@@ -1024,11 +1040,24 @@ function renderMetricCards(data) {
   var effClass = avgEff >= 85 ? 'good' : avgEff >= 70 ? 'warn' : 'bad';
   var awakeClass = avgAwake <= 1 ? 'good' : avgAwake <= 3 ? 'warn' : 'bad';
 
+  /* Latest weight and BMI */
+  var weightCards = '';
+  var latestWeight = data.slice().sort(function(a, b) { return b.date.localeCompare(a.date); })
+    .find(function(e) { return e.weight && parseFloat(e.weight) > 0; });
+  if (latestWeight) {
+    var w = parseFloat(latestWeight.weight);
+    var bmi = w / (1.63 * 1.63);
+    var bmiClass = bmi >= 18.5 && bmi <= 22.9 ? 'good' : bmi < 18.5 ? 'warn' : 'bad';
+    weightCards = metricHtml('Weight', w.toFixed(1) + 'kg', bmiClass) +
+                  metricHtml('BMI', bmi.toFixed(1), bmiClass);
+  }
+
   document.getElementById('metricsGrid').innerHTML =
     metricHtml('Sleep', avgDur.toFixed(1) + 'h', durClass) +
     metricHtml('Latency', Math.round(avgLat) + 'min', latClass) +
     metricHtml('Efficiency', Math.round(avgEff) + '%', effClass) +
-    metricHtml('Awakenings', avgAwake.toFixed(1), awakeClass);
+    metricHtml('Awakenings', avgAwake.toFixed(1), awakeClass) +
+    weightCards;
 }
 
 function metricHtml(label, value, cls) {
@@ -1057,6 +1086,62 @@ function renderCharts(data) {
     if (h >= 24) h -= 24;
     return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
   });
+
+  /* Weight trend chart with BMI healthy range (height = 163cm) */
+  var HEIGHT_M = 1.63;
+  var BMI_LOW_KG = +(18.5 * HEIGHT_M * HEIGHT_M).toFixed(1);  /* 49.2 */
+  var BMI_HIGH_KG = +(22.9 * HEIGHT_M * HEIGHT_M).toFixed(1); /* 60.8 */
+  var weightEntries = sorted.filter(function(e) { return e.weight && parseFloat(e.weight) > 0; });
+  if (charts.weight) charts.weight.destroy();
+  if (weightEntries.length >= 1) {
+    var wLabels = weightEntries.map(function(e) { return e.date.slice(5); });
+    var wData = weightEntries.map(function(e) { return parseFloat(e.weight); });
+    var bmiLowArr = wLabels.map(function() { return BMI_LOW_KG; });
+    var bmiHighArr = wLabels.map(function() { return BMI_HIGH_KG; });
+    charts.weight = new Chart(document.getElementById('chartWeight'), {
+      type: 'line',
+      data: {
+        labels: wLabels,
+        datasets: [
+          {
+            label: 'Weight (kg)', data: wData, borderColor: '#f2a7c3', backgroundColor: 'rgba(242,167,195,0.1)',
+            fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#f2a7c3', borderWidth: 2.5
+          },
+          {
+            label: 'BMI 22.9 (' + BMI_HIGH_KG + 'kg)', data: bmiHighArr, borderColor: 'rgba(168,230,207,0.5)',
+            backgroundColor: 'rgba(168,230,207,0.1)', fill: '+1', borderWidth: 1, borderDash: [5, 4],
+            pointRadius: 0
+          },
+          {
+            label: 'BMI 18.5 (' + BMI_LOW_KG + 'kg)', data: bmiLowArr, borderColor: 'rgba(168,230,207,0.5)',
+            backgroundColor: 'rgba(168,230,207,0.1)', fill: false, borderWidth: 1, borderDash: [5, 4],
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'NaikaiFont, Quicksand', size: 11 } } },
+          y: {
+            grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'NaikaiFont, Quicksand', size: 11 },
+              callback: function(v) { return v + ' kg'; }
+            },
+            suggestedMin: Math.min(BMI_LOW_KG - 3, Math.min.apply(null, wData) - 2),
+            suggestedMax: Math.max(BMI_HIGH_KG + 3, Math.max.apply(null, wData) + 2)
+          }
+        },
+        plugins: {
+          legend: { labels: { color: textColor, font: { family: 'NaikaiFont, Quicksand' } } }
+        },
+        interaction: { mode: 'index', intersect: false }
+      }
+    });
+  } else {
+    charts.weight = null;
+    var wCtx = document.getElementById('chartWeight').getContext('2d');
+    wCtx.clearRect(0, 0, wCtx.canvas.width, wCtx.canvas.height);
+  }
 
   var causeCount = {};
   data.forEach(function(e) {
@@ -1320,6 +1405,18 @@ function parseSheetTime(val) {
   return s;
 }
 
+/* Flexible row value getter — matches headers regardless of casing/spaces/underscores */
+function getRowVal(row, key) {
+  if (row[key] !== undefined && row[key] !== null) return row[key];
+  var norm = key.toLowerCase().replace(/[_ ]/g, '');
+  var keys = Object.keys(row);
+  for (var i = 0; i < keys.length; i++) {
+    if (keys[i].toLowerCase().replace(/[_ ]/g, '') === norm) return row[keys[i]];
+  }
+  /* Also try matching by column index as fallback (known column order) */
+  return undefined;
+}
+
 /* ============ GOOGLE SHEETS ============ */
 function startAutoSync() {
   if (syncInterval) clearInterval(syncInterval);
@@ -1337,17 +1434,18 @@ function fetchEntries(silent) {
       if (data.status === 'success' && Array.isArray(data.data)) {
         entries = data.data.map(function(row) {
           return {
-            id: String(row.id || ''),
-            date: parseSheetDate(row.date),
-            bedTime: parseSheetTime(row.bedTime),
-            melatoninTime: parseSheetTime(row.melatoninTime),
-            fallAsleepTime: parseSheetTime(row.fallAsleepTime),
-            awakeCount: parseInt(row.awakeCount) || 0,
-            awakeningTimes: String(row.awakeningTimes || ''),
-            wakeUpTime: parseSheetTime(row.wakeUpTime),
-            causes: String(row.causes || ''),
-            notes: String(row.notes || ''),
-            alcohol: String(row.alcohol || '')
+            id: String(getRowVal(row, 'id') || ''),
+            date: parseSheetDate(getRowVal(row, 'date')),
+            bedTime: parseSheetTime(getRowVal(row, 'bedTime')),
+            melatoninTime: parseSheetTime(getRowVal(row, 'melatoninTime')),
+            fallAsleepTime: parseSheetTime(getRowVal(row, 'fallAsleepTime')),
+            awakeCount: parseInt(getRowVal(row, 'awakeCount')) || 0,
+            awakeningTimes: String(getRowVal(row, 'awakeningTimes') || ''),
+            wakeUpTime: parseSheetTime(getRowVal(row, 'wakeUpTime')),
+            causes: String(getRowVal(row, 'causes') || ''),
+            notes: String(getRowVal(row, 'notes') || ''),
+            alcohol: String(getRowVal(row, 'alcohol') || ''),
+            weight: String(getRowVal(row, 'weight') || '')
           };
         });
         entries.sort(function(a, b) { return b.date.localeCompare(a.date); });
